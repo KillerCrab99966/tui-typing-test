@@ -5,7 +5,7 @@ use crossterm::{
     event::{self, Event, KeyCode},
     execute,
     style::{ContentStyle, Stylize},
-    terminal::{disable_raw_mode, enable_raw_mode},
+    terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode},
 };
 
 use crate::words::generate_word_list;
@@ -13,11 +13,20 @@ use crate::words::generate_word_list;
 mod words;
 
 fn main() {
-    let list = generate_word_list(10);
-    start_test(list);
+    loop {
+        execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
+        let list = generate_word_list(10);
+        if !start_test(list) {
+            break;
+        }
+    }
+    println!();
+    disable_raw_mode().unwrap();
+    execute!(stdout(), Show).unwrap();
 }
 
-fn start_test(list: Vec<&str>) {
+/// Returns `true` for a new test and `false` to quit.
+fn start_test(list: Vec<&str>) -> bool {
     // Split the list into chars
     let total_chars = list.join(" ").len();
 
@@ -30,20 +39,25 @@ fn start_test(list: Vec<&str>) {
         // Add spaces between words
         test_chars.push(' ');
     }
+    // Remove the trailing space
+    test_chars.pop();
 
     // Inputted chars
     let mut input = Vec::with_capacity(total_chars);
 
-    display_test(&[], &test_chars);
-
     enable_raw_mode().unwrap();
     execute!(stdout(), Hide).unwrap();
+    display_test(&[], &test_chars);
+
     loop {
         if let Ok(Event::Key(k)) = event::read() {
             if k.code.is_esc() {
-                disable_raw_mode().unwrap();
-                execute!(stdout(), Show).unwrap();
-                return;
+                return false;
+            }
+
+            // New test on enter
+            if k.code.is_enter() {
+                return true;
             }
 
             if k.code == KeyCode::Backspace {
@@ -52,11 +66,22 @@ fn start_test(list: Vec<&str>) {
                 input.push(ch);
             }
             display_test(&input, &test_chars);
+
+            // End test if all the characters have been typed
+            // and the last is correct, or more characters than
+            // in the test have been typed.
+            if (input.len() == test_chars.len() && input.last() == test_chars.last())
+                || input.len() > test_chars.len()
+            {
+                return true;
+            }
         }
     }
 }
 
 fn display_test(input: &[char], expected: &[char]) {
+    print!("\r");
+
     let pos = input.len();
     for (i, ch) in expected.iter().enumerate() {
         let mut style = ContentStyle::new();
