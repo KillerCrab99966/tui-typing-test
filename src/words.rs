@@ -1,6 +1,6 @@
 use rand::random_range;
 
-static WORDS: [&'static str; 200] = [
+static WORDS: [&str; 200] = [
     "the", "be", "of", "and", "a", "to", "in", "he", "have", "it", "that", "for", "they", "I",
     "with", "as", "not", "on", "she", "at", "by", "this", "we", "you", "do", "but", "from", "or",
     "which", "one", "would", "all", "will", "there", "say", "who", "make", "when", "can", "more",
