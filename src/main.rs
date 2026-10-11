@@ -2,7 +2,14 @@ use std::io::{Read, Write, stdin, stdout};
 
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 
+use crate::words::generate_word_list;
+
+mod words;
+
 fn main() {
+    let list = generate_word_list(10);
+    println!("{}", list.join(" "));
+
     enable_raw_mode().unwrap();
     for b in stdin().bytes() {
         let b = b.unwrap();
