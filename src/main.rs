@@ -4,7 +4,7 @@ use crossterm::{
     cursor::{Hide, Show},
     event::{self, Event, KeyCode},
     execute,
-    style::Stylize,
+    style::{ContentStyle, Stylize},
     terminal::{disable_raw_mode, enable_raw_mode},
 };
 
@@ -21,20 +21,20 @@ fn start_test(list: Vec<&str>) {
     // Split the list into chars
     let total_chars = list.join(" ").len();
 
-    let mut chars = Vec::with_capacity(total_chars);
+    let mut test_chars = Vec::with_capacity(total_chars);
     for word in list {
         for ch in word.chars() {
-            chars.push(ch);
+            test_chars.push(ch);
         }
 
         // Add spaces between words
-        chars.push(' ');
+        test_chars.push(' ');
     }
 
-    // Position of cursor
-    let mut pos = 0;
+    // Inputted chars
+    let mut input = Vec::with_capacity(total_chars);
 
-    write_chars(&chars, pos);
+    display_test(&[], &test_chars);
 
     enable_raw_mode().unwrap();
     execute!(stdout(), Hide).unwrap();
@@ -46,26 +46,35 @@ fn start_test(list: Vec<&str>) {
                 return;
             }
 
-            // print!("{}\r", c);
-            // stdout().flush().unwrap();
             if k.code == KeyCode::Backspace {
-                pos -= 1;
-            } else if let KeyCode::Char(_) = k.code {
-                pos += 1;
+                input.pop();
+            } else if let KeyCode::Char(ch) = k.code {
+                input.push(ch);
             }
-            write_chars(&chars, pos);
+            display_test(&input, &test_chars);
         }
     }
 }
 
-fn write_chars(chars: &[char], pos: usize) {
-    for (i, ch) in chars.iter().enumerate() {
-        // Highlight the char under the cursor
-        if i == pos {
-            print!("{}", (*ch).underlined());
+fn display_test(input: &[char], expected: &[char]) {
+    let pos = input.len();
+    for (i, ch) in expected.iter().enumerate() {
+        let mut style = ContentStyle::new();
+
+        if i < pos {
+            // Red for incorrect input
+            if ch != &input[i] {
+                style = style.red()
+            }
+        } else if i == pos {
+            // Highlight the char under the cursor
+            style = style.dim().underlined();
         } else {
-            print!("{}", ch);
+            // Dim chars not typed yet
+            style = style.dim();
         }
+
+        print!("{}", style.apply(ch));
     }
     print!("\r");
     stdout().flush().unwrap();
