@@ -89,7 +89,7 @@ fn display_test(input: &[char], expected: &[char]) {
         if i < pos {
             // Red for incorrect input
             if ch != &input[i] {
-                style = style.red()
+                style = style.red().underline_red().underlined();
             }
         } else if i == pos {
             // Highlight the char under the cursor
